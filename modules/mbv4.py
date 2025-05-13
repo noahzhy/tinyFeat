@@ -8,6 +8,8 @@ arXiv preprint arXiv:2404.10518.
 import torch
 import torch.nn as nn
 import math
+# defaultdict
+from collections import defaultdict
 
 
 __all__ = ['mobilenetv4_conv_small']
@@ -109,36 +111,33 @@ class MobileNetV4(nn.Module):
     def __init__(self, block_specs, num_classes=1000):
         super(MobileNetV4, self).__init__()
 
-        c = 3
-        layers = []
+        self.blocks = defaultdict(list)
+
+        c = 1
         for block_type, *block_cfg in block_specs:
             if block_type == 'conv_bn':
                 block = ConvBN
-                k, s, f = block_cfg
-                layers.append(block(c, f, k, s))
+                k, s, f, block_idx = block_cfg
+                self.blocks[block_idx].append(block(c, f, k, s))
             elif block_type == 'uib':
                 block = UniversalInvertedBottleneck
-                start_k, middle_k, s, f, e = block_cfg
-                layers.append(block(c, f, e, start_k, middle_k, s))
+                start_k, middle_k, s, f, e, block_idx = block_cfg
+                self.blocks[block_idx].append(block(c, f, e, start_k, middle_k, s))
             else:
                 raise NotImplementedError
             c = f
-        self.features = nn.Sequential(*layers)
-        # building last several layers
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        hidden_channels = 1280
-        self.conv = ConvBN(c, hidden_channels, 1)
-        self.classifier = nn.Linear(hidden_channels, num_classes)
+
+        for block_idx, layers in self.blocks.items():
+            setattr(self, block_idx, nn.Sequential(*layers))
 
         self._initialize_weights()
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
+        shortcut = []
+        for block_idx, layers in self.blocks.items():
+            x = getattr(self, block_idx)(x)
+            shortcut.append(x)
+        return shortcut
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -163,28 +162,23 @@ def mobilenetv4_conv_small(**kwargs):
         # conv_bn, kernel_size, stride, out_channels
         # uib, start_dw_kernel_size, middle_dw_kernel_size, stride, out_channels, expand_ratio
         # 112px
-        ('conv_bn', 1, 2, 32),
+        ('conv_bn', 1, 2, 16, "s1"),
         # 56px
-        ('conv_bn', 3, 2, 32),
-        ('conv_bn', 1, 1, 32),
+        ('conv_bn', 3, 2, 32, "s2"),
+        ('conv_bn', 1, 1, 32, "s2"),
         # 28px
-        ('conv_bn', 3, 2, 96),
-        ('conv_bn', 1, 1, 64),
+        ('conv_bn', 3, 2, 48, "s3"),
+        ('conv_bn', 1, 1, 64, "s3"),
         # 14px
-        ('uib', 5, 5, 2, 96, 3.0),  # ExtraDW
-        ('uib', 0, 3, 1, 96, 2.0),  # IB
-        # ('uib', 0, 3, 1, 96, 2.0),  # IB
-        # ('uib', 0, 3, 1, 96, 2.0),  # IB
-        # ('uib', 0, 3, 1, 96, 2.0),  # IB
-        ('uib', 3, 0, 1, 96, 4.0),  # ConvNext
+        ('uib', 5, 5, 2, 64, 3.0, "s4"),  # ExtraDW
+        ('uib', 0, 3, 1, 64, 2.0, "s4"),  # IB
+        ('uib', 3, 0, 1, 64, 3.0, "s4"),  # ConvNext
         # 7px
-        ('uib', 3, 3, 2, 128, 6.0),  # ExtraDW
-        ('uib', 5, 5, 1, 128, 4.0),  # ExtraDW
-        # ('uib', 0, 5, 1, 128, 4.0),  # IB
-        ('uib', 0, 5, 1, 128, 3.0),  # IB
-        # ('uib', 0, 3, 1, 128, 4.0),  # IB
-        ('uib', 0, 3, 1, 128, 4.0),  # IB
-        ('conv_bn', 1, 1, 64),  # Conv
+        ('uib', 3, 3, 2, 128, 4.0, "s5"),  # ExtraDW
+        ('uib', 5, 5, 1, 128, 3.0, "s5"),  # ExtraDW
+        ('uib', 0, 5, 1, 128, 2.0, "s5"),  # IB
+        ('uib', 0, 3, 1, 128, 3.0, "s5"),  # IB
+        ('conv_bn', 1, 1, 64, "s5"),  # Conv
     ]
     return MobileNetV4(block_specs, **kwargs)
 

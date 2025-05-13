@@ -8,14 +8,12 @@ import torch.nn.functional as F
 from utils.tools import *
 from modules.xfeat import XFeat
 from modules.mbv4 import mobilenetv4_conv_small
+from modules.tinyFeat import TinyFeat
 
 # disable cuda
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# cpu
-device = torch.device("cpu")
 
 
 if __name__ == "__main__":
@@ -24,12 +22,15 @@ if __name__ == "__main__":
     input_shape = (1, 3, 640, 480)  # 2.65 GFLOPs
     dummy_input = torch.randn(input_shape).to(device)
     out = model(dummy_input)
-
     for k, v in out[0].items():
         print(k, v.shape)
 
+    input_shape = (1, 1, 640, 480)
     count_parameters(model, input_shape)
 
-    model = mobilenetv4_conv_small(num_classes=10).eval().to(device)
+    model = TinyFeat().eval().to(device)
+    output = model(torch.randn(input_shape).to(device))
+    for output_item in output:
+        print(output_item.shape)
     count_parameters(model, input_shape)
     
