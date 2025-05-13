@@ -10,8 +10,7 @@ import torch.nn as nn
 import math
 
 
-__all__ = ['mobilenetv4_conv_small', 'mobilenetv4_conv_medium', 'mobilenetv4_conv_large',
-           'mobilenetv4_hybrid_medium', 'mobilenetv4_hybrid_large']
+__all__ = ['mobilenetv4_conv_small']
 
 
 def make_divisible(value, divisor, min_value=None, round_down_protect=True):
@@ -189,81 +188,3 @@ def mobilenetv4_conv_small(**kwargs):
     ]
     return MobileNetV4(block_specs, **kwargs)
 
-
-def mobilenetv4_conv_medium(**kwargs):
-    """
-    Constructs a MobileNetV4-Conv-Medium model
-    """
-    block_specs = [
-        ('conv_bn', 3, 2, 32),
-        ('conv_bn', 3, 2, 128),
-        ('conv_bn', 1, 1, 48),
-        # 3rd stage
-        ('uib', 3, 5, 2, 80, 4.0),
-        ('uib', 3, 3, 1, 80, 2.0),
-        # 4th stage
-        ('uib', 3, 5, 2, 160, 6.0),
-        ('uib', 3, 3, 1, 160, 4.0),
-        ('uib', 3, 3, 1, 160, 4.0),
-        ('uib', 3, 5, 1, 160, 4.0),
-        ('uib', 3, 3, 1, 160, 4.0),
-        ('uib', 3, 0, 1, 160, 4.0),
-        ('uib', 0, 0, 1, 160, 2.0),
-        ('uib', 3, 0, 1, 160, 4.0),
-        # 5th stage
-        ('uib', 5, 5, 2, 256, 6.0),
-        ('uib', 5, 5, 1, 256, 4.0),
-        ('uib', 3, 5, 1, 256, 4.0),
-        ('uib', 3, 5, 1, 256, 4.0),
-        ('uib', 0, 0, 1, 256, 4.0),
-        ('uib', 3, 0, 1, 256, 4.0),
-        ('uib', 3, 5, 1, 256, 2.0),
-        ('uib', 5, 5, 1, 256, 4.0),
-        ('uib', 0, 0, 1, 256, 4.0),
-        ('uib', 0, 0, 1, 256, 4.0),
-        ('uib', 5, 0, 1, 256, 2.0),
-        # FC layers
-        ('conv_bn', 1, 1, 960),
-    ]
-
-    return MobileNetV4(block_specs, **kwargs)
-
-
-def mobilenetv4_conv_large(**kwargs):
-    """
-    Constructs a MobileNetV4-Conv-Large model
-    """
-    block_specs = [
-        ('conv_bn', 3, 2, 24),
-        ('conv_bn', 3, 2, 96),
-        ('conv_bn', 1, 1, 48),
-        ('uib', 3, 5, 2, 96, 4.0),
-        ('uib', 3, 3, 1, 96, 4.0),
-        ('uib', 3, 5, 2, 192, 4.0),
-        ('uib', 3, 3, 1, 192, 4.0),
-        ('uib', 3, 3, 1, 192, 4.0),
-        ('uib', 3, 3, 1, 192, 4.0),
-        ('uib', 3, 5, 1, 192, 4.0),
-        ('uib', 5, 3, 1, 192, 4.0),
-        ('uib', 5, 3, 1, 192, 4.0),
-        ('uib', 5, 3, 1, 192, 4.0),
-        ('uib', 5, 3, 1, 192, 4.0),
-        ('uib', 5, 3, 1, 192, 4.0),
-        ('uib', 3, 0, 1, 192, 4.0),
-        ('uib', 5, 5, 2, 512, 4.0),
-        ('uib', 5, 5, 1, 512, 4.0),
-        ('uib', 5, 5, 1, 512, 4.0),
-        ('uib', 5, 5, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('uib', 5, 3, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('uib', 5, 3, 1, 512, 4.0),
-        ('uib', 5, 5, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('uib', 5, 0, 1, 512, 4.0),
-        ('conv_bn', 1, 1, 960),
-    ]
-
-    return MobileNetV4(block_specs, **kwargs)
